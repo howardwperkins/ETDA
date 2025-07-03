@@ -1,4 +1,7 @@
-﻿namespace Bot
+﻿using System;
+using System.Diagnostics;
+
+namespace Bot
 {
     partial class MainForm
     {
@@ -22,6 +25,7 @@
 
         private void InitializeComponent()
         {
+            Console.WriteLine("MainForm InitializeComponent called");
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.SuspendLayout();
             // 
@@ -37,6 +41,7 @@
             this.Text = "etda";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.ResumeLayout(false);
+            Console.WriteLine("MainForm InitializeComponent completed");
 
         }
     }
