@@ -131,8 +131,12 @@ namespace Bot
                 {
                     Update(delta);
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
+                    Console.Error.WriteLine(e.Message);
+                    Console.Error.WriteLine(e.StackTrace);
+                    Application.Exit();
+                    
                     continue;
                 }
                 finally

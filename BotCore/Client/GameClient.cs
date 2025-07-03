@@ -399,7 +399,7 @@ namespace BotCore
                 if (obj != null)
                     return obj;
 
-                throw new Exception("Error, Component PlayerArrtibutes is not installed.");
+                throw new Exception("Error, Component PlayerAttributes is not installed.");
             }
         }
 

@@ -28,10 +28,9 @@ namespace BotCore.Components
                 base.Pulse();
 
                 var count = Process.GetProcessesByName("Darkages");
-                Console.WriteLine("Process Count: " + count.Length);
+
                 if (count.Length != Processes.Count)
                 {
-                    Console.WriteLine("Process Count Changed: " + count.Length + " - " + Processes.Count);
                     var id = count.Select(i => i.Id).Except(Processes).FirstOrDefault();
                     var p = count.FirstOrDefault(i => i.Id == id);
 
