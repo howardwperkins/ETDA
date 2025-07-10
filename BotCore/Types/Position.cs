@@ -27,7 +27,11 @@ namespace BotCore.Types
         public Position(byte x, byte y) : this((short)x, (short)y) { }
         public Position(int x, int y) : this((short)x, (short)y) { }
         public Position() : this(0, 0) { }
-
+        
+        public override string ToString()
+        {
+            return $"({X}, {Y})";
+        }
         public bool IsNearby(Position pos)
         {
             return pos.DistanceFrom(X, Y) <= 1;

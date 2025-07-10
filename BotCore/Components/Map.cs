@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -33,19 +34,15 @@ namespace BotCore.Components
         {
             get
             {
-                if (((x + 1) * (y + 1)) <= Grid.Length)
-                {
-                    return Grid[x, y];
-                }
-
-                return int.MinValue;
+                if (x < 0 || x >= Width || y < 0 || y >= Height)
+                    return int.MinValue;
+                return Grid[x, y];
             }
             set
             {
-                if (x != 0 && y != 0 && ((x + 1) * (y + 1)) <= Grid.Length)
-                {
-                    Grid[x, y] = value;
-                }
+                if (x < 0 || x >= Width || y < 0 || y >= Height)
+                    throw new IndexOutOfRangeException($"Map index out of range: ({x},{y})");
+                Grid[x, y] = value;
             }
         }
 
@@ -329,7 +326,7 @@ namespace BotCore.Components
             if (Grid == null)
                 return;
 
-            if (((x + 1) * (y + 1)) <= Grid.Length)
+            if (x >= 0 && x < Width && y >= 0 && y < Height)
             {
                 this[x, y] = value;
             }
@@ -406,6 +403,7 @@ namespace BotCore.Components
 
                     foreach (var obj in MapObjects)
                     {
+                        
                         if (obj.Type == MapObjectType.Monster ||
                             obj.Type == MapObjectType.Aisling ||
                             obj.Type == MapObjectType.NPC)

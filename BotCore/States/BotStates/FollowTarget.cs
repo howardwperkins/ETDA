@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.Design;
 using System.Linq;
+using BotCore.Types;
 
 namespace BotCore.States
 {
@@ -83,13 +84,10 @@ namespace BotCore.States
         {
             get
             {
-
                 var closest = (from v in Leaders
                                where v.Client.IsInGame() && v.Name != Client.Attributes.PlayerName
                                orderby Client.Attributes.ServerPosition.DistanceFrom(v.Client.Attributes.ServerPosition)
                                select v).FirstOrDefault();
-
-
 
                 if (Client.FieldMap != null && Client.IsInGame()
                     && Client.MapLoaded && Client.Utilities.CanWalk())
@@ -102,6 +100,12 @@ namespace BotCore.States
                         if (m_target != null)
                         {
                             //determine if should follow?
+                            if (Client.MapId != m_target.Client.MapId)
+                            {
+                                Console.WriteLine("-> " + m_target.Name + " in " + m_target.Client.MapName);
+                                return true;
+                            }
+                            
                             if (Client.Attributes?
                                 .ServerPosition?
                                 .DistanceFrom(m_target?.Client.Attributes.ServerPosition) > Distance
@@ -127,7 +131,11 @@ namespace BotCore.States
 
         public Random rnd = new Random();
 
-
+        private Position m_targetLastKnownPosition = null;
+        private Direction m_targetLastKnownDirection = Direction.None;
+        private short m_targetLastKnownMap = 0;
+        private string m_targetLastKnownMapName = null;
+        
         public override void Run(TimeSpan Elapsed)
         {
             if (Enabled && !InTransition)
@@ -136,10 +144,55 @@ namespace BotCore.States
 
                 if (m_target != null)
                 {
-                    var path =
-                        Client.FieldMap.Search(Client.Attributes.ServerPosition,
-                        m_target.Client.Attributes?.ServerPosition);
-
+                    var myMap = Client.MapId;
+                    
+                    var targetMap = m_target.Client.MapId;
+                    string targetMapName = m_target.Client.MapName;
+                    var targetX = m_target.Client.Attributes?.ServerPosition.X;
+                    var targetY = m_target.Client.Attributes?.ServerPosition.Y;
+                    Direction targetDirection = m_target.Client.Attributes.Direction;
+                    
+                    Console.WriteLine("-> " + m_target.Name + " to " + targetMapName + "[" + targetX + "," + targetY + "]");
+                    
+                    Position endPosition = null;
+                    if (myMap != targetMap)
+                    {
+                        if (m_targetLastKnownPosition == null)
+                        {
+                            // if we don't know the last position we can't follow
+                            Console.WriteLine("No last known position, cannot follow.");
+                        }
+                        else
+                        {
+                            endPosition = m_targetLastKnownPosition;
+                            Console.WriteLine(m_target.Name + " last seen in " + m_targetLastKnownMapName + " @ " + m_targetLastKnownPosition + " facing " + m_targetLastKnownDirection);
+                        }
+                    }
+                    else
+                    {
+                        // maps are the same, so remember this position
+                        endPosition = m_target.Client.Attributes?.ServerPosition;
+                        m_targetLastKnownPosition = endPosition;
+                        m_targetLastKnownDirection = targetDirection;
+                        m_targetLastKnownMap = targetMap;
+                        m_targetLastKnownMapName = targetMapName;
+                    }
+                    
+                    var path = Client.FieldMap.Search(Client.Attributes.ServerPosition, endPosition);
+                 // loop through path and print the xy coordinates
+                    if (path != null)
+                    {
+                        Console.WriteLine("Path found:");
+                        foreach (var step in path)
+                        {
+                            Console.WriteLine($"Step to: {step.X}, {step.Y}");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("No path found.");
+                    }
+                    
                     if (path != null)
                     {
                         Client.Utilities.ComputeStep(path, Distance);

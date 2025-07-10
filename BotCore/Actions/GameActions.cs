@@ -159,6 +159,7 @@ namespace BotCore.Actions
         {
             if ((DateTime.Now - Client.LastMovementUpdate).TotalMilliseconds > 50)
             {
+                //Console.WriteLine($"Walking {Client.Attributes.Serial} in direction {dir}");
                 if (dir == Direction.Random)
                 {
                     var random = (Direction)rnd.Next(0, 3);

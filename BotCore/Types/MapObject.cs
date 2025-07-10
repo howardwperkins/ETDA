@@ -89,7 +89,6 @@ namespace BotCore.Types
             client.FieldMap.SetPassable(oldPosition);
             client.FieldMap.SetWall(newPosition);
             UpdatePath(client);
-
         }
 
         internal bool IsNearby(int distance = 10)
@@ -172,7 +171,22 @@ namespace BotCore.Types
                 || this is Aisling
                 && Serial != client.Attributes.Serial)
             {
-                PathToMapObject = client.FieldMap.Search(client.Attributes.ServerPosition, ServerPosition);
+                Position start = client.Attributes.ServerPosition;
+                Position end = ServerPosition;
+
+                short endX = end.X;
+                short endY = end.Y;
+                short width = client.FieldMap.Width;
+                short height = client.FieldMap.Height;
+                if (endX < 0 || endY < 0 || endX > client.FieldMap.Width || endY > client.FieldMap.Height)
+                {
+                    Console.WriteLine(this.Client.Attributes.PlayerName + " tried to search for a path to " +
+                        this.GetType().Name + " at position " + endX + "," + endY + " on map " +
+                        client.FieldMap.MapNumber() + ", but the position is out of bounds.");
+                    PathToMapObject = null;
+                    return;
+                }
+                PathToMapObject = client.FieldMap.Search(start, end);
                 PathUpdated(client, PathToMapObject);
             }
         }

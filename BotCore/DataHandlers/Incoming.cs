@@ -6,6 +6,7 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Threading;
+using BotCore.Components;
 
 namespace BotCore.DataHandlers
 {
@@ -31,10 +32,11 @@ namespace BotCore.DataHandlers
                {
                    LoadMap(client, number, width, height);
                    client.MapLoaded = true;
-
+                   client.MapId = number;
+                   client.MapName = name;
                    //reset active bar pointer
                    client.Active?.HardReset();
-
+                   Console.WriteLine("Map Loaded: " + name + " (" + number + ")");
                    //todo: reset any other pointers here on new map load.
                    ;
                }) { IsBackground = true }.Start();
@@ -44,12 +46,14 @@ namespace BotCore.DataHandlers
 
         public static void ObjectWalked(object sender, Packet e)
         {
+            // print packet data TO CONSOLE
+            //Console.WriteLine("ObjectWalked: " + BitConverter.ToString(e.Data).Replace("-", " "));
+            
             var client = Collections.AttachedClients[(int)sender];
             var serial = e.ReadInt32();
             var x = e.ReadInt16();
             var y = e.ReadInt16();
             var d = (Direction)e.ReadByte();
-
             var oldPosition = new Position(x, y);
             var newPosition = new Position(0, 0);
             var obj = client.FieldMap.GetObject(i => i.Serial == serial);
@@ -262,6 +266,11 @@ namespace BotCore.DataHandlers
         public static void ClientLocationUpdated(object sender, Packet packet)
         {
             var client = Collections.AttachedClients[(int)sender];
+            
+            // Prevent processing if map is not loaded
+            if (!client.MapLoaded)
+                return;
+            
             var x = (short)packet.ReadUInt16();
             var y = (short)packet.ReadUInt16();
 
@@ -442,9 +451,25 @@ namespace BotCore.DataHandlers
 
         private static void PrepareMap(Client client, short number, short width, short height, string path)
         {
-            client.FieldMap.Ready = false;
+            Map oldMap = client.FieldMap;
+            GameClient oldClient = oldMap.Client;
+
+            Map newMap = new Map();
+            newMap.Enabled = true;
+            newMap.Init(0, 0, 0);
+            newMap.Enabled = true;
+            newMap.Ready = false;
+            newMap.Client = oldClient;
+            newMap.Client.FieldMap = newMap;
+
+            client.FieldMap = newMap;
             client.FieldMap.OnMapLoaded(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite), number, width, height);
             client.FieldMap.Ready = true;
+            
+            // Replace in InstalledComponents
+            if (client.InstalledComponents.Contains(oldMap))
+                client.InstalledComponents.Remove(oldMap);
+            client.InstalledComponents.Add(client.FieldMap);
         }
 
         public static void ObjectRemoved(object sender, Packet e)

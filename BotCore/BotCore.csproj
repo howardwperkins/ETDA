@@ -105,8 +105,8 @@
     <Compile Include="Components\StressTest.cs" />
     <Compile Include="Interop\MemoryPatternSearcher.cs" />
     <Compile Include="Shared\Memory\DAPointers.cs" />
-    <Compile Include="States\BotStates\AttackMonsters.cs" />
     <Compile Include="States\BotStates\FollowTarget.cs" />
+    <Compile Include="States\BotStates\AttackMonsters.cs" />
     <Compile Include="Shared\Client.cs" />
     <Compile Include="Shared\Collections.cs" />
     <Compile Include="Components\GameEquipment.cs" />

@@ -316,7 +316,7 @@ namespace BotCore
 
         public Form BotForm { get; set; }
 
-        public Map FieldMap { get; private set; }
+        public Map FieldMap { get; set; }
 
         public MemorySharp Memory { get; set; }
 
@@ -448,6 +448,10 @@ namespace BotCore
         public bool ClientReady = true;
         public bool MapLoaded = false;
         public bool MapLoading { get; set; }
+        
+        public string MapName { get; set; }
+        public short MapId { get; set; }
+        
         public string EquippedWeapon { get; set; }
         public int Steps { get; set; }
         public List<string> LocalWorldUsers { get; set; }
