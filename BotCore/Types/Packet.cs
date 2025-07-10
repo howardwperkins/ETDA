@@ -36,9 +36,10 @@ namespace BotCore
                     .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
                     .ToArray();
             }
-            catch
+            catch (Exception e)
             {
-                return;
+                Console.Error.WriteLine(e.Message);
+                Console.Error.WriteLine(e.StackTrace);
             }
         }
 

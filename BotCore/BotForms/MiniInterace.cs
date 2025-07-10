@@ -25,9 +25,10 @@ namespace BotCore
                 if (client.Attributes != null)
                     this.Text = client?.Attributes.PlayerName + " (" + client.Attributes.Serial + ")";
             }
-            catch (Exception xp)
+            catch (Exception _e)
             {
-
+                Console.Error.WriteLine(_e.Message);
+                Console.Error.WriteLine(_e.StackTrace);
             }
         }
 

@@ -52,7 +52,7 @@ namespace BotCore
         [DllImport("EtDA.dll")]
         public static extern void OnAction([MarshalAs(UnmanagedType.FunctionPtr)] ProgressCallback callbackPointer);
 
-        public void InitializeMemory(Process p, string Hack)
+        public void InitializeMemory(Process p, string dllPath)
         {
             Memory = new MemorySharp(p);
             CleanUpMememory();
@@ -60,13 +60,18 @@ namespace BotCore
             var injected = Memory.Read<byte>((IntPtr)DAStaticPointers.ETDA, false);
             if (injected == 85)
             {
-                var HackModule = Memory.Modules.Inject(Hack);
-                if (HackModule.IsValid)
+                try
                 {
+                    Memory.Modules.Inject(dllPath);
                     Console.Beep();
-                }
 
-                GameClient.Hack = Hack;
+                    Hack = dllPath;
+                } catch (Exception e)
+                {
+                    MessageBox.Show(e.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Console.Error.WriteLine(e.Message);
+                    Console.Error.WriteLine(e.StackTrace);
+                }
             }
         }
 
@@ -394,7 +399,7 @@ namespace BotCore
                 if (obj != null)
                     return obj;
 
-                throw new Exception("Error, Component PlayerArrtibutes is not installed.");
+                throw new Exception("Error, Component PlayerAttributes is not installed.");
             }
         }
 

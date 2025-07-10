@@ -82,9 +82,11 @@ namespace BotCore
                                 MiniWindow.UpdateStatistics();
                             }
                         }
-                        catch
+                        catch (Exception e)
                         {
-
+                            Console.Error.WriteLine(e.Message);
+                            Console.Error.WriteLine(e.StackTrace);
+                            Application.Exit();
                         }
                     });
                 }
@@ -315,8 +317,11 @@ namespace BotCore
                     if (comboBox2.Text == "Server")
                         GameClient.InjectPacket<ServerPacket>(client, new Packet(buffer), true);
                 }
-                catch (InvalidOperationException)
+                catch (InvalidOperationException ex)
                 {
+                    Console.Error.WriteLine(ex.Message);
+                    Console.Error.WriteLine(ex.StackTrace);
+                    Application.Exit();
                     continue;
                 }
             }
