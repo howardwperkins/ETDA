@@ -10,16 +10,22 @@ namespace Bot
 {
     public partial class MainForm : Form
     {
+        private Panel contentPanel;
+        
         public MainForm()
         {
             InitializeComponent();
             Client.ClientAttached += AddBotTab;
+            contentPanel = new Panel { Dock = DockStyle.Fill };
+            Controls.Add(contentPanel);
         }
 
         public void AddBotTab(Client client)
         {
-            var botControl = new BotUserControl(client);
-            var tab = new TabPage(client.Attributes.PlayerName) { Controls = { botControl } };
+            Console.WriteLine("Adding bot tab for client: " + client.Attributes.PlayerName);
+            BotUserControl botControl = new BotUserControl(client);
+            var tab = new TabPage("poundtownabc") { Controls = { botControl } };
+            //var tab = new TabPage(client.Attributes.PlayerName) { Controls = { botControl } };
             tabControl1.TabPages.Add(tab);
         }
         

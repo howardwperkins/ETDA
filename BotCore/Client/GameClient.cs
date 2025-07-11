@@ -395,12 +395,14 @@ namespace BotCore
         {
             get
             {
-                var obj = InstalledComponents.OfType<PlayerAttributes>()
-                    .FirstOrDefault();
-
+                List<UpdateableComponent> copy;
+                lock (InstalledComponents)
+                {
+                    copy = new List<UpdateableComponent>(InstalledComponents);
+                }
+                var obj = copy.OfType<PlayerAttributes>().FirstOrDefault();
                 if (obj != null)
                     return obj;
-
                 throw new Exception("Error, Component PlayerAttributes is not installed.");
             }
         }
