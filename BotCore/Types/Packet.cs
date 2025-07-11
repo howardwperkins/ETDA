@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using System.Windows.Forms;
 using BotCore.Types;
 
 namespace BotCore
@@ -59,13 +60,22 @@ namespace BotCore
             get { return Data[index]; }
             set
             {
-                if (Client._memory != null && Client._memory == null && !Client._memory.IsRunning) return;
-                if (Type == 2 && Client.SendPointer != 0)
-                    if (Client._memory != null)
-                        Client._memory.Write((IntPtr)Client.SendPointer + index, value, false);
-                if (Type == 1 && Client.RecvPointer != 0)
-                    if (Client._memory != null)
-                        Client._memory.Write((IntPtr)Client.RecvPointer + index, value, false);
+                try
+                {
+                    if (Client._memory != null && Client._memory == null && !Client._memory.IsRunning) return;
+                    if (Type == 2 && Client.SendPointer != 0)
+                        if (Client._memory != null)
+                            Client._memory.Write((IntPtr)Client.SendPointer + index, value, false);
+                    if (Type == 1 && Client.RecvPointer != 0)
+                        if (Client._memory != null)
+                            Client._memory.Write((IntPtr)Client.RecvPointer + index, value, false);
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show("Error: " + e.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Console.Error.WriteLine(e.Message);
+                    Console.Error.WriteLine(e.StackTrace);
+                }
             }
         }
 
