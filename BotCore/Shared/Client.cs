@@ -11,6 +11,8 @@ namespace BotCore
     [Serializable]
     public class Client : GameClient
     {
+        public static event Action<Client> ClientAttached;
+        
         public Client()
         {
             Client = this;
@@ -68,8 +70,8 @@ namespace BotCore
 
         private void PreparePrelims()
         {
-            // TODO: Add new tabs for each Client to MainForm or any other UI component
-
+            ClientAttached?.Invoke(this);
+            
             GameActions.Refresh(Client, true, (a, b) => true);
             GameActions.Refresh(Client, true, (a, b) => true);
         }

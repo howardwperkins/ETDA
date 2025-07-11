@@ -13,13 +13,14 @@ namespace Bot
         public MainForm()
         {
             InitializeComponent();
+            Client.ClientAttached += AddBotTab;
         }
 
         public void AddBotTab(Client client)
         {
-            /*var botControl = new BotUserControl(client);
+            var botControl = new BotUserControl(client);
             var tab = new TabPage(client.Attributes.PlayerName) { Controls = { botControl } };
-            tabControl1.TabPages.Add(tab);*/
+            tabControl1.TabPages.Add(tab);
         }
         
         private int idx;
