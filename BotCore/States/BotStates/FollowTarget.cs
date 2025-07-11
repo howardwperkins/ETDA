@@ -35,25 +35,25 @@ namespace BotCore.States
 
         public override void InitState()
         {
-            Dictionary<int, Client> leaders = new Dictionary<int, Client>();
-            leaders = Collections.AttachedClients;
-            
-            // loop through leaders and print their key and name and serial
-            foreach (var leader in leaders)
-            {
-                Console.WriteLine($"Leader: {leader.Key}, Name: {leader.Value.Attributes.PlayerName}, Serial: {leader.Value.Attributes.Serial}");
-            }
-            
-            /*
-            Leaders.AddRange(Client.OtherClients.Select(i => new Leader()
-            {
-                Name = i.Attributes.PlayerName,
-                Serial = i.Attributes.Serial,
-                Client = i.Client
-            }));*/
+            Console.WriteLine("FollowTarget initialized for " + Client.Attributes.PlayerName);
         }
 
+        // add get/set to this
         public Leader m_target = null;
+
+        public void setTarget(Leader leader)
+        {
+            if (leader == null)
+            {
+                Console.WriteLine(Client.Attributes.PlayerName + " is no longer following anyone.");
+                
+            }
+            else
+            {
+                Console.WriteLine(Client.Attributes.PlayerName + " is now following " + leader.Name);
+            }
+            m_target = leader;
+        }
 
         public class Leader
         {
@@ -62,6 +62,11 @@ namespace BotCore.States
 
             [Browsable(false)]
             public GameClient Client { get; set; }
+            
+            public override string ToString()
+            {
+                return Name;
+            }
         }
 
         private int m_Followinstance = 2;
@@ -76,19 +81,12 @@ namespace BotCore.States
         {
             get
             {
-                var closest = (from v in Leaders
-                               where v.Client.IsInGame() && v.Name != Client.Attributes.PlayerName
-                               orderby Client.Attributes.ServerPosition.DistanceFrom(v.Client.Attributes.ServerPosition)
-                               select v).FirstOrDefault();
-
                 if (Client.FieldMap != null && Client.IsInGame()
                     && Client.MapLoaded && Client.Utilities.CanWalk())
                 {
 
                     if (Client.ObjectSearcher != null)
                     {
-                        m_target = closest;
-
                         if (m_target != null)
                         {
                             //determine if should follow?

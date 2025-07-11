@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
@@ -11,6 +11,8 @@ namespace Bot
     public partial class MainForm : Form
     {
 
+        List<BotUserControl> _allBotUserControls = new List<BotUserControl>();
+        
         public MainForm()
         {
             InitializeComponent();
@@ -22,6 +24,16 @@ namespace Bot
             BotUserControl botControl = new BotUserControl(client);
             var tab = new TabPage(client.Attributes.PlayerName) { Controls = { botControl } };
             tabControl1.TabPages.Add(tab);
+            _allBotUserControls.Add(botControl);
+            IntroduceNewBotToAllBots(botControl);
+        }
+        
+        void IntroduceNewBotToAllBots(BotUserControl newBot)
+        {
+            foreach (var existingBot in _allBotUserControls)
+            {
+                existingBot.IntroduceBot(newBot);
+            }
         }
         
         private int idx;

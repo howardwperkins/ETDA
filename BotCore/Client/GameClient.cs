@@ -183,8 +183,10 @@ namespace BotCore
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Console.Error.WriteLine(e.Message);
+                Console.Error.WriteLine(e.StackTrace);
             }
         }
 
