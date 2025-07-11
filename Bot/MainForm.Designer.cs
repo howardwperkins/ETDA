@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Windows.Forms;
 
 namespace Bot
 {
@@ -10,6 +11,8 @@ namespace Bot
         /// </summary>
         private System.ComponentModel.IContainer components = null;
 
+        private ToolStrip toolStrip;
+        
         /// <summary>
         /// Clean up any resources being used.
         /// </summary>
@@ -25,7 +28,6 @@ namespace Bot
 
         private void InitializeComponent()
         {
-            Console.WriteLine("MainForm InitializeComponent called");
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.SuspendLayout();
             // 
@@ -35,14 +37,23 @@ namespace Bot
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(854, 561);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.IsMdiContainer = true;
+            this.IsMdiContainer = false;
             this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.Name = "MainForm";
             this.Text = "etda";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.ResumeLayout(false);
-            Console.WriteLine("MainForm InitializeComponent completed");
+            
+            // Create and configure the ToolStrip
+            toolStrip = new ToolStrip();
+            toolStrip.Dock = DockStyle.Top;
 
+            // Example: Add a button to the ToolStrip
+            var toolStripButton = new ToolStripButton("New Client");
+            toolStrip.Items.Add(toolStripButton);
+
+            // Add the ToolStrip to the form
+            Controls.Add(toolStrip);
         }
     }
 }

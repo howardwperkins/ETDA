@@ -13,15 +13,15 @@ namespace Bot
         public MainForm()
         {
             InitializeComponent();
-            foreach (Control ctrl in Controls)
-            {
-                if (ctrl is MdiClient)
-                {
-                    ctrl.BackColor = Color.White;
-                }
-            }
         }
 
+        public void AddBotTab(Client client)
+        {
+            /*var botControl = new BotUserControl(client);
+            var tab = new TabPage(client.Attributes.PlayerName) { Controls = { botControl } };
+            tabControl1.TabPages.Add(tab);*/
+        }
+        
         private int idx;
         private int previd;
 

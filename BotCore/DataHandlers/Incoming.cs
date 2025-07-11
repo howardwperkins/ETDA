@@ -46,9 +46,15 @@ namespace BotCore.DataHandlers
 
         public static void ObjectWalked(object sender, Packet e)
         {
-            // print packet data TO CONSOLE
-            //Console.WriteLine("ObjectWalked: " + BitConverter.ToString(e.Data).Replace("-", " "));
-            
+            var client = Collections.AttachedClients[(int)sender];
+            var serial = e.ReadInt32();
+            var x = e.ReadInt16();
+            var y = e.ReadInt16();
+            var d = (Direction)e.ReadByte();
+        }
+        
+        public static void _ObjectWalked(object sender, Packet e)
+        {
             var client = Collections.AttachedClients[(int)sender];
             var serial = e.ReadInt32();
             var x = e.ReadInt16();
@@ -264,6 +270,10 @@ namespace BotCore.DataHandlers
         }
 
         public static void ClientLocationUpdated(object sender, Packet packet)
+        {
+            Console.WriteLine("ClientLocationUpdated packet received.");
+        }
+        public static void _ClientLocationUpdated(object sender, Packet packet)
         {
             var client = Collections.AttachedClients[(int)sender];
             

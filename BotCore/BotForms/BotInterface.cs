@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,15 +13,22 @@ using BotCore.Shared.Memory;
 
 namespace BotCore
 {
+
     public partial class BotInterface : Form
     {
         public Client client { get; set; }
         public MiniInterace MiniWindow { get; set; }
 
+        private static readonly object AllLeadersLock = new object();
+        private static List<string> _allLeaders = new List<string>();
+
         public BotInterface(Client client)
         {
             InitializeComponent();
+
             this.client = client;
+            MdiParent = Collections.ParentForm;
+            
             MiniWindow = new MiniInterace(client);
             MiniWindow.MdiParent = Collections.ParentForm;
             MiniWindow.Dock = DockStyle.Bottom;
@@ -29,6 +37,48 @@ namespace BotCore
             VisibleChanged += BotInterface_VisibleChanged;
         }
 
+        public static void AddLeaderToAll(string leaderName)
+        {
+            lock (AllLeadersLock)
+            {
+                if (!_allLeaders.Contains(leaderName))
+                    _allLeaders.Add(leaderName);
+            }
+
+            if (Collections.ParentForm != null)
+            {
+                foreach (Form child in Collections.ParentForm.MdiChildren)
+                {
+                    if (child is BotInterface bot)
+                    {
+                        if (bot.leaderListBox != null && !bot.leaderListBox.Items.Contains(leaderName))
+                            bot.leaderListBox.Items.Add(leaderName);
+                    }
+                }
+            }
+        }
+        
+        public static void RemoveLeaderFromAll(string leaderName)
+        {
+            lock (AllLeadersLock)
+            {
+                if (_allLeaders.Contains(leaderName))
+                    _allLeaders.Remove(leaderName);
+            }
+
+            if (Collections.ParentForm != null)
+            {
+                foreach (Form child in Collections.ParentForm.MdiChildren)
+                {
+                    if (child is BotInterface bot)
+                    {
+                        if (bot.leaderListBox != null && bot.leaderListBox.Items.Contains(leaderName))
+                            bot.leaderListBox.Items.Remove(leaderName);
+                    }
+                }
+            }
+        }
+        
         public Color GetBlendedColor(int percentage)
         {
             return Color.FromArgb(percentage, Color.Green);

@@ -9,22 +9,6 @@ using BotCore.Types;
 
 namespace BotCore.States
 {
-    public class LeaderCollection : CollectionBase
-    {
-        public FollowTarget.Leader this[int index]
-        {
-            get { return (FollowTarget.Leader)List[index]; }
-        }
-        public void Add(FollowTarget.Leader emp)
-        {
-            List.Add(emp);
-        }
-        public void Remove(FollowTarget.Leader emp)
-        {
-            List.Remove(emp);
-        }
-    }
-
     public class FollowCollectionEditor : CollectionEditor
     {
         public FollowCollectionEditor(Type type)
@@ -51,14 +35,22 @@ namespace BotCore.States
 
         public override void InitState()
         {
-            Leaders = new List<Leader>();
-
+            Dictionary<int, Client> leaders = new Dictionary<int, Client>();
+            leaders = Collections.AttachedClients;
+            
+            // loop through leaders and print their key and name and serial
+            foreach (var leader in leaders)
+            {
+                Console.WriteLine($"Leader: {leader.Key}, Name: {leader.Value.Attributes.PlayerName}, Serial: {leader.Value.Attributes.Serial}");
+            }
+            
+            /*
             Leaders.AddRange(Client.OtherClients.Select(i => new Leader()
             {
                 Name = i.Attributes.PlayerName,
                 Serial = i.Attributes.Serial,
                 Client = i.Client
-            }));
+            }));*/
         }
 
         public Leader m_target = null;

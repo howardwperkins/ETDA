@@ -356,6 +356,8 @@ namespace BotCore
             }
             catch (Exception e)
             {
+                Console.Error.WriteLine(e.Message);
+                Console.Error.WriteLine(e.StackTrace);
                 return null;
             }
         }
@@ -465,6 +467,8 @@ namespace BotCore
             }
             catch (Exception e)
             {
+                Console.Error.WriteLine(e.Message);
+                Console.Error.WriteLine(e.StackTrace);
             }
         }
 
@@ -572,6 +576,8 @@ namespace BotCore
             }
             catch (Exception e)
             {
+                Console.Error.WriteLine(e.Message);
+                Console.Error.WriteLine(e.StackTrace);
             }
         }
     }

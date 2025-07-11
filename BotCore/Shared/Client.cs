@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Windows.Forms;
 using BotCore.Actions;
 using BotCore.DataHandlers;
 using BotCore.States;
@@ -67,24 +68,10 @@ namespace BotCore
 
         private void PreparePrelims()
         {
-            BotForm = new BotInterface(this)
-            {
-                MdiParent = Collections.ParentForm
-            };
-            BotForm.Show();
-            BotForm.Text = Attributes.PlayerName;
+            // TODO: Add new tabs for each Client to MainForm or any other UI component
 
             GameActions.Refresh(Client, true, (a, b) => true);
             GameActions.Refresh(Client, true, (a, b) => true);
-
-
-            //disable blind effects in client.
-            if (_memory.Read<byte>((IntPtr)DAStaticPointers.NoBlind, false) != 0x75)
-                _memory.Write<byte>((IntPtr)DAStaticPointers.NoBlind, 0x75, false);
-
-
-
-            Client.ReleaseMovementLock();
         }
 
         //This is used to manage Auto Logging-In (If Enabled).
