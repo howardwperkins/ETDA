@@ -127,21 +127,21 @@ namespace BotCore
             }
         }
 
-        public void ComputeStep(List<PathSolver.PathFinderNode> path, int Distance = 2)
+        public void ComputeStep(List<PathSolver.PathFinderNode> path, int distance = 2)
         {
-            var pos = new Position(path[Distance].X, path[Distance].Y);
+            var pos = new Position(path[distance].X, path[distance].Y);
             var abx = pos.X - Client.Attributes.ServerPosition.X;
             var aby = pos.Y - Client.Attributes.ServerPosition.Y;
 
-            if (abx == Distance && aby == 0)
+            if (abx == distance && aby == 0)
                 GameActions.Walk(Client, Direction.East);
-            else if ((abx == 0 && aby == -Distance)
+            else if ((abx == 0 && aby == -distance)
                 || (abx == 1 && aby == -1)
                 || (abx == -1 && aby == -1))
                 GameActions.Walk(Client, Direction.North);
-            else if (abx == -Distance && aby == 0)
+            else if (abx == -distance && aby == 0)
                 GameActions.Walk(Client, Direction.West);
-            else if ((abx == 0 && aby == Distance)
+            else if ((abx == 0 && aby == distance)
                 || (abx == 1 && aby == 1)
                 || (abx == -1 && aby == 1))
                 GameActions.Walk(Client, Direction.South);

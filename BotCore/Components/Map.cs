@@ -372,7 +372,7 @@ namespace BotCore.Components
 
         }
 
-        public List<PathSolver.PathFinderNode> Search(Position Start, Position End)
+        public List<PathSolver.PathFinderNode> Search(Position start, Position end)
         {
             try
             {
@@ -412,14 +412,13 @@ namespace BotCore.Components
                         }
                     }
 
-                    SetPassable(Start);
-                    SetPassable(End);
+                    SetPassable(start);
+                    SetPassable(end);
 
-                    nodes[Start.X, Start.Y].IsBlock = false;
-                    nodes[End.X, End.Y].IsBlock = false;
+                    nodes[start.X, start.Y].IsBlock = false;
+                    nodes[end.X, end.Y].IsBlock = false;
 
-
-                    var usingpath = PathSolver.FindPath(ref nodes, Start, End);
+                    var usingpath = PathSolver.FindPath(ref nodes, start, end);
                     return usingpath;
                 }
             }

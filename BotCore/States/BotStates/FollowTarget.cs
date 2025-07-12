@@ -128,65 +128,65 @@ namespace BotCore.States
         
         public override void Run(TimeSpan Elapsed)
         {
-            if (Enabled && !InTransition)
+            if (Enabled 
+                && !InTransition 
+                && m_target != null 
+                && m_target.Client != null 
+                && m_target.Client.Attributes != null
+                && m_target.Client.Attributes.ServerPosition != null)
             {
                 InTransition = true;
-
-                if (m_target != null)
+                
+                /*
+                 While m_target walks around a given map their client updates their position in real-time.
+                 This game state runs in a separate thread under the context of a separate client and continuously
+                 checks their current position.
+                 If both clients are on the same map then this can simply follow their coordinates and remain
+                 at the specified distance.
+                 However once the target client changes maps their current position is not a valid location for this
+                 client to move to and this clcient needs to move to exactly where the target client was last seen on
+                 their previous map ignoring follow distance.
+                */
+                
+                var myMap = Client.MapId;
+                
+                var targetMap = m_target.Client.MapId;
+                string targetMapName = m_target.Client.MapName;
+                var targetX = m_target.Client.Attributes?.ServerPosition.X;
+                var targetY = m_target.Client.Attributes?.ServerPosition.Y;
+                Direction targetDirection = m_target.Client.Attributes.Direction;
+                
+                Console.WriteLine("-> " + m_target.Name + " to " + targetMapName + "[" + targetX + "," + targetY + "]");
+                
+                Position endPosition = null;
+                if (myMap != targetMap)
                 {
-                    var myMap = Client.MapId;
-                    
-                    var targetMap = m_target.Client.MapId;
-                    string targetMapName = m_target.Client.MapName;
-                    var targetX = m_target.Client.Attributes?.ServerPosition.X;
-                    var targetY = m_target.Client.Attributes?.ServerPosition.Y;
-                    Direction targetDirection = m_target.Client.Attributes.Direction;
-                    
-                    Console.WriteLine("-> " + m_target.Name + " to " + targetMapName + "[" + targetX + "," + targetY + "]");
-                    
-                    Position endPosition = null;
-                    if (myMap != targetMap)
+                    if (m_targetLastKnownPosition == null)
                     {
-                        if (m_targetLastKnownPosition == null)
-                        {
-                            // if we don't know the last position we can't follow
-                            Console.WriteLine("No last known position, cannot follow.");
-                        }
-                        else
-                        {
-                            endPosition = m_targetLastKnownPosition;
-                            Console.WriteLine(m_target.Name + " last seen in " + m_targetLastKnownMapName + " @ " + m_targetLastKnownPosition + " facing " + m_targetLastKnownDirection);
-                        }
+                        // if we don't know the last position we can't follow
+                        Console.WriteLine("No last known position, cannot follow.");
                     }
                     else
                     {
-                        // maps are the same, so remember this position
-                        endPosition = m_target.Client.Attributes?.ServerPosition;
-                        m_targetLastKnownPosition = endPosition;
-                        m_targetLastKnownDirection = targetDirection;
-                        m_targetLastKnownMap = targetMap;
-                        m_targetLastKnownMapName = targetMapName;
+                        endPosition = m_targetLastKnownPosition;
+                        Console.WriteLine(m_target.Name + " last seen in " + m_targetLastKnownMapName + " @ " + m_targetLastKnownPosition + " facing " + m_targetLastKnownDirection);
                     }
-                    
-                    var path = Client.FieldMap.Search(Client.Attributes.ServerPosition, endPosition);
-                 // loop through path and print the xy coordinates
-                    if (path != null)
-                    {
-                        Console.WriteLine("Path found:");
-                        foreach (var step in path)
-                        {
-                            Console.WriteLine($"Step to: {step.X}, {step.Y}");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("No path found.");
-                    }
-                    
-                    if (path != null)
-                    {
-                        Client.Utilities.ComputeStep(path, Distance);
-                    }
+                }
+                else
+                {
+                    // maps are the same, so remember this position
+                    endPosition = m_target.Client.Attributes?.ServerPosition;
+                    m_targetLastKnownPosition = endPosition;
+                    m_targetLastKnownDirection = targetDirection;
+                    m_targetLastKnownMap = targetMap;
+                    m_targetLastKnownMapName = targetMapName;
+                }
+                
+                var path = Client.FieldMap.Search(Client.Attributes.ServerPosition, endPosition);
+                
+                if (path != null)
+                {
+                    Client.Utilities.ComputeStep(path, Distance);
                 }
             }
             Client.TransitionTo(this, Elapsed);
