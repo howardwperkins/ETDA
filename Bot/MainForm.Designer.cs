@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
+using BotCore;
 
 namespace Bot
 {
@@ -51,11 +53,14 @@ namespace Bot
             this.toolStrip1 = new ToolStrip();
             this.tabControl1 = new TabControl();
 
+            ToolStripButton packetsButton = new ToolStripButton("Packets");
+            packetsButton.Click += PacketsButton_Click;
+            
             //
             // toolStrip1
             //
             this.toolStrip1.Dock = DockStyle.Top;
-            this.toolStrip1.Items.Add(new ToolStripButton("Button1"));
+            this.toolStrip1.Items.Add(packetsButton);
             this.toolStrip1.Items.Add(new ToolStripButton("Button2"));
             
             // 
@@ -73,6 +78,32 @@ namespace Bot
             // Add the TabControl to the form
             this.Controls.Add(this.tabControl1);
             this.Controls.Add(this.toolStrip1);
+        }
+        
+        private void PacketsButton_Click(object sender, EventArgs e)
+        {
+            // Open packet editor for all attached clients
+            OpenPacketEditorsForAllClients();
+        }
+        
+        private void OpenPacketEditorsForAllClients()
+        {
+            foreach (var client in Collections.AttachedClients.Values)
+            {
+                if (client != null && client.ClientReady && client.IsInGame())
+                {
+                    var packetEditor = new PacketEditorForm(client);
+                    packetEditor.Text = $"Packet Editor - {client.Attributes.PlayerName}";
+                    packetEditor.Show();
+                }
+            }
+        }
+        
+        private Client GetSelectedClient()
+        {
+            // This method is no longer needed since we're opening editors for all clients
+            // But keeping it for potential future use
+            return Collections.AttachedClients.Values.FirstOrDefault(c => c?.ClientReady == true);
         }
         
         private void tabControl1_DrawItem(object sender, DrawItemEventArgs e)

@@ -122,10 +122,12 @@
     <Compile Include="Client\GameClient.cs" />
     <Compile Include="States\BotStates\CheckIfBC.cs" />
     <Compile Include="States\BotStates\RemoveDebuff.cs" />
+    <Compile Include="Types\Breadcrumbs.cs" />
     <Compile Include="Types\CurseInfo.cs" />
     <Compile Include="Types\FasInfo.cs" />
     <Compile Include="Types\GameUtilities.cs" />
     <Compile Include="Types\KeyboardHook.cs" />
+    <Compile Include="Types\Leader.cs" />
     <Compile Include="Types\Packet.cs" />
     <Compile Include="PathFinding\PathSolver.cs" />
     <Compile Include="Properties\Resources.Designer.cs">

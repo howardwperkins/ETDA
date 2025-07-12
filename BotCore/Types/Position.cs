@@ -7,6 +7,8 @@ namespace BotCore.Types
     {
         public short X, Y;
 
+        public bool IsDoor { get; set; } = false;
+
         public int DistanceFrom(Position other)
         {
             return DistanceFrom(other.X, other.Y);

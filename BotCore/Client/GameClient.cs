@@ -174,8 +174,9 @@ namespace BotCore
                     {
                         var tempState = (GameState) Activator.CreateInstance(type);
                         tempState.Client = this;
-                        tempState.SettingsInterface = new StateSettings(tempState) {Dock = DockStyle.Fill};
-                        tempState.SettingsInterface.OnSettingsUpdated += SettingsInterface_OnSettingsUpdated;
+                        // This handles user interface settings
+                        //tempState.SettingsInterface = new StateSettings(tempState) {Dock = DockStyle.Fill};
+                        //tempState.SettingsInterface.OnSettingsUpdated += SettingsInterface_OnSettingsUpdated;
                         tempState.InitState();
 
                         if (!StateMachine.States.Contains(tempState))

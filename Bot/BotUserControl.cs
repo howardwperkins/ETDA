@@ -1,22 +1,25 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
         using BotCore;
         using BotCore.States;
+        using BotCore.Types;
 
         namespace Bot
         {
             public class BotUserControl : UserControl
             {
                 public Client Client;
+                public Leader Leader;
                 public ListBox LeaderListBox;
                 private readonly TabControl _tabControl;
-                public FollowTarget.Leader Leader;
+                
                 public BotUserControl(Client client)
                 {
                     Client = client;
-                    Leader = new FollowTarget.Leader
+                    Leader = new Leader
                     {
                         Name = Client.Attributes.PlayerName,
                         Serial = Client.Attributes.Serial,
@@ -47,6 +50,7 @@ using System.Windows.Forms;
                     LeaderListBox.Items.Add("<None>");
                     LeaderListBox.SelectedIndex = 0;
                     
+                    // Clicking on the list box will set the follow target
                     LeaderListBox.SelectedIndexChanged += (sender, e) =>
                     {
                         var followState = Client.StateMachine.States
@@ -55,15 +59,13 @@ using System.Windows.Forms;
                         
                         if (followState != null)
                         {
-                            if (LeaderListBox.SelectedItem is FollowTarget.Leader leader)
+                            if (LeaderListBox.SelectedItem is Leader leader)
                             {
-                                followState.setTarget(leader);
-                                followState.Enabled = true;
+                                followState.Leader = leader;
                             }
                             else
                             {
-                                followState.Enabled = false;
-                                followState.setTarget(null);
+                                followState.Leader = null;
                             }
                         }
                     };

@@ -180,9 +180,9 @@ namespace BotCore.Types
                 short height = client.FieldMap.Height;
                 if (endX < 0 || endY < 0 || endX > client.FieldMap.Width || endY > client.FieldMap.Height)
                 {
-                    Console.WriteLine(this.Client.Attributes.PlayerName + " tried to search for a path to " +
-                        this.GetType().Name + " at position " + endX + "," + endY + " on map " +
-                        client.FieldMap.MapNumber() + ", but the position is out of bounds.");
+                    Console.WriteLine(this.Client.Attributes.PlayerName + " tried " +
+                                      client.MapId + "(" + start.X + "," + start.Y + ")->" +
+                                      client.FieldMap.MapNumber() + "(" + endX + "," + endY + ") but the position is out of bounds.");
                     PathToMapObject = null;
                     return;
                 }

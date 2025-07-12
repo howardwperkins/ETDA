@@ -19,14 +19,16 @@ namespace BotCore.States
             InitializeComponent();
             State = state;
 
-            StateAttribute attributes =
-                (StateAttribute)Attribute.GetCustomAttribute(state.GetType(), typeof(StateAttribute));
-            StateMetaInfo meta =
-                (StateMetaInfo)Attribute.GetCustomAttribute(state.GetType(), typeof(StateMetaInfo));
+            // This is code that automatically generates user interface elements based on
+            // settings in a GameState class
+            //StateAttribute attributes =
+            //    (StateAttribute)Attribute.GetCustomAttribute(state.GetType(), typeof(StateAttribute));
+            //StateMetaInfo meta =
+            //    (StateMetaInfo)Attribute.GetCustomAttribute(state.GetType(), typeof(StateMetaInfo));
 
-            label2.Text = string.Format("Developed by {0}", attributes.Author);
-            if (meta != null && meta.Version != null)
-                label2.Text += "\nVersion: " + meta.Version + "\nLast Updated: " + meta.DateUpdated;
+            //label2.Text = string.Format("Developed by {0}", attributes.Author);
+            //if (meta != null && meta.Version != null)
+            //    label2.Text += "\nVersion: " + meta.Version + "\nLast Updated: " + meta.DateUpdated;
         }
 
         private void button1_Click(object sender, EventArgs e)

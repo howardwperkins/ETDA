@@ -4,9 +4,11 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using BotCore.Components;
+using BotCore.States;
 
 namespace BotCore.DataHandlers
 {
@@ -271,10 +273,6 @@ namespace BotCore.DataHandlers
 
         public static void ClientLocationUpdated(object sender, Packet packet)
         {
-            Console.WriteLine("ClientLocationUpdated packet received.");
-        }
-        public static void _ClientLocationUpdated(object sender, Packet packet)
-        {
             var client = Collections.AttachedClients[(int)sender];
             
             // Prevent processing if map is not loaded
@@ -285,9 +283,8 @@ namespace BotCore.DataHandlers
             var y = (short)packet.ReadUInt16();
 
             var oldPosition = client.Attributes.ServerPosition;
-
-            client.Attributes.ServerPosition = new Position(x, y);
-            var newPosition = client.Attributes.ServerPosition = new Position(x, y);
+            var newPosition = new Position(x, y);
+            client.Attributes.ServerPosition = newPosition;
 
             var obj = client.FieldMap.GetObject(i => i.Serial == client.Attributes.Serial);
             if (obj != null)
