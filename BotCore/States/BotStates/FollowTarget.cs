@@ -26,9 +26,11 @@ namespace BotCore.States
                 if (value == null)
                 {
                     if (_leader != null)
+                    {
                         _leader.RemoveFollower(Client);
-
-                    _leader = null;
+                        _leader = null;
+                    }
+                    
                     Enabled = false;
                     Console.WriteLine(Client.Attributes.PlayerName + " is no longer following anyone.");
                 }
