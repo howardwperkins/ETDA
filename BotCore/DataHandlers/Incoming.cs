@@ -111,6 +111,7 @@ namespace BotCore.DataHandlers
                                 break;
                         }
                         
+                        // TODO: better handling of tracking map id's
                         followState.Leader.DropBreadcrumbsToFollowers(followerMapId, breadcrumbPosition);
                     }
                 }
@@ -183,44 +184,6 @@ namespace BotCore.DataHandlers
             var d = (Direction)e.ReadByte();
         }
         
-        public static void _ObjectWalked(object sender, Packet e)
-        {
-            var client = Collections.AttachedClients[(int)sender];
-            var serial = e.ReadInt32();
-            var x = e.ReadInt16();
-            var y = e.ReadInt16();
-            var d = (Direction)e.ReadByte();
-            var oldPosition = new Position(x, y);
-            var newPosition = new Position(0, 0);
-            var obj = client.FieldMap.GetObject(i => i.Serial == serial);
-            if (obj == null)
-                return;
-
-            switch (d)
-            {
-                case Direction.South:
-                    y++;
-                    break;
-                case Direction.North:
-                    y--;
-                    break;
-                case Direction.West:
-                    x--;
-                    break;
-                case Direction.East:
-                    x++;
-                    break;
-            }
-
-            newPosition.X = x;
-            newPosition.Y = y;
-
-            obj.Direction = d;
-            obj.ServerPosition = newPosition;
-            obj.OldPosition    = oldPosition;
-            obj.OnPositionUpdated(client, oldPosition, newPosition);
-        }
-
         internal static void Stats(object sender, Packet packet)
         {
             var client = Collections.AttachedClients[(int)sender];
@@ -399,6 +362,12 @@ namespace BotCore.DataHandlers
             obj.Direction = (Direction)direction;
         }
 
+        /// <summary>
+        /// This handles the AislingsAdded packet 0x0A.
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="packet"></param>
         public static void AislingsAdded(object sender, Packet packet)
         {
             var client = Collections.AttachedClients[(int)sender];
@@ -587,6 +556,12 @@ namespace BotCore.DataHandlers
         }
 
 
+        /// <summary>
+        /// This handles the EntitiesAdded packet 0x0C.
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="packet"></param>
         public static void EntitiesAdded(object sender, Packet packet)
         {
             var client = Collections.AttachedClients[(int)sender];
@@ -595,8 +570,8 @@ namespace BotCore.DataHandlers
 
             for (var i = 0; i < (int)count; i++)
             {
-                var X = packet.ReadInt16();
-                var Y = packet.ReadInt16();
+                var x = packet.ReadInt16();
+                var y = packet.ReadInt16();
                 var Serial = packet.ReadInt32();
                 var Sprite = packet.ReadUInt16();
                 packet.ReadByte();
@@ -605,7 +580,7 @@ namespace BotCore.DataHandlers
 
                 objects[i] = new MapObject();
                 objects[i].Serial = Serial;
-                objects[i].ServerPosition = new Position(X, Y);
+                objects[i].ServerPosition = new Position(x, y);
                 objects[i].Sprite = Sprite;
 
                 if (Sprite < 32768)
@@ -620,7 +595,7 @@ namespace BotCore.DataHandlers
 
                     if (Type == 2)
                     {
-                        var Name = packet.ReadString8();
+                        var name = packet.ReadString8();
                         objects[i].Sprite = Sprite;
                         objects[i].Type = MapObjectType.NPC;
                     }

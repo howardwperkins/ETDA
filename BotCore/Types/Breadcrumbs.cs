@@ -40,6 +40,21 @@ namespace BotCore.Types
             Console.WriteLine(@"Cleared all Breadcrumbs.");
         }
         
+        public void ClearAllBreadcrumbsNotInMap(int mapId)
+        {
+            if (Trail.IsEmpty)
+            {
+                return;
+            }
+
+            var keysToRemove = Trail.Keys.Where(k => k != mapId).ToList();
+            foreach (var key in keysToRemove)
+            {
+                Trail.TryRemove(key, out _);
+                Console.WriteLine(@"Cleared Breadcrumb {0}", key);
+            }
+        }
+        
         public void ClearBreadcrumb(int mapId)
         {
             if (Trail.IsEmpty)

@@ -75,7 +75,7 @@ namespace BotCore.States
                 
                 if (Client.MapId == Leader.Client.MapId)
                 {
-                    Breadcrumbs.ClearAllBreadcrumbs();
+                    Breadcrumbs.ClearAllBreadcrumbsNotInMap(Client.MapId);
                     TargetPosition = Leader.Client.Attributes.ServerPosition;
                     TargetIsBreadcrumb = false;
                     return true;
@@ -123,6 +123,10 @@ namespace BotCore.States
                     var path = Client.FieldMap.Search(Client.Attributes.ServerPosition, TargetPosition);
                     if (path == null || path.Count == 0)
                     {
+                        if (TargetIsBreadcrumb && TargetPosition == Breadcrumbs.GetBreadcrumb(Client.MapId))
+                        {
+                            Breadcrumbs.ClearBreadcrumb(Client.MapId);
+                        }
                         Console.WriteLine(Client.Attributes.PlayerName + " NO PATH " + Client.Attributes.ServerPosition + "->" + TargetPosition);
                         InTransition = false;
                         return;
