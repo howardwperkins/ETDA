@@ -79,7 +79,7 @@ namespace BotCore.States
                     return true;
                 }
                 
-                var peekTargetPosition = Breadcrumbs.PeekNextBreadcrumb(Client.MapId);
+                var peekTargetPosition = Breadcrumbs.GetNextBreadcrumb(Client.MapId);
                 if (peekTargetPosition == null)
                     return false;
                 
@@ -109,17 +109,34 @@ namespace BotCore.States
                     return;
                 }
                 
-                var peekTargetPosition = Breadcrumbs.PeekNextBreadcrumb(Client.MapId);
-                var path = Client.FieldMap.Search(Client.Attributes.ServerPosition, peekTargetPosition);
-                
-                if (path != null)
+
+
+                while (!DoneWalking())
                 {
-                    Breadcrumbs.GetNextBreadcrumb(Client.MapId);
-                    //Console.WriteLine(Client.Attributes.PlayerName + " @ " + Client.MapId + " (" + Client.Attributes.ServerPosition.X + "," + Client.Attributes.ServerPosition.Y + ") -> (" + walkTo.X + "," + walkTo.Y + ")");
+                    var path = Client.FieldMap.Search(Client.Attributes.ServerPosition, TargetPosition);
+                    if (path == null || path.Count == 0)
+                    {
+                        Console.WriteLine(Client.Attributes.PlayerName + " could not find a path to the target position.");
+                        InTransition = false;
+                        return;
+                    }
+                    
                     WalkPath(path);
                 }
+                
             }
             Client.TransitionTo(this, elapsed);
+        }
+
+        private bool DoneWalking()
+        {
+            var doneWalking = Client.Attributes.ServerPosition == TargetPosition;
+            if (!ExactPosition)
+            {
+                doneWalking = Client.Attributes.ServerPosition.IsNearby(TargetPosition);
+            }
+
+            return doneWalking;
         }
         
         private void WalkPath(List<PathSolver.PathFinderNode> path)
