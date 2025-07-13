@@ -45,13 +45,16 @@ namespace BotCore.Types
             Followers.Remove(follower);
         }
             
-        public void DropBreadcrumbsToFollowers()
+        public void DropBreadcrumbsToFollowers(int mapId = 0, Position position = null)
         {
             if (!IsActive)
                 return;
             
-            var position = Client.Attributes.ServerPosition;
-            var mapId = Client.MapId;
+            if (position == null)
+                position = Client.Attributes.ServerPosition;
+            
+            if (mapId == 0)
+                mapId = Client.MapId;
             
             foreach (var follower in Followers)
             {

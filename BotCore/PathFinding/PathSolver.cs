@@ -316,6 +316,10 @@ namespace BotCore.PathFinding
             public int X { get; set; }
             public int Y { get; set; }
             public int Heuristic { get; set; }
+            public override string ToString()
+            {
+                return $"({X}, {Y})";
+            }
         }
     }
 }

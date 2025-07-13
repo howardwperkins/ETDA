@@ -46,15 +46,15 @@ namespace BotCore
 
         private void AddServerHandlers()
         {
+            AddServerHandler(0x15, Incoming.MapLoaded);
             AddServerHandler(0x04, Incoming.ClientLocationUpdated);
+            AddServerHandler(0x0B, Incoming.ClientPlayerWalked);
             AddServerHandler(0x07, Incoming.EntitiesAdded);
             AddServerHandler(0x0A, Incoming.Barmessage);
-            AddServerHandler(0x0B, Incoming.ClientPlayerWalked);
             AddServerHandler(0x0C, Incoming.ObjectWalked);
             AddServerHandler(0x0D, Incoming.ChatMessages);
             AddServerHandler(0x0E, Incoming.ObjectRemoved);
             AddServerHandler(0x11, Incoming.EntitiesChangedDirection);
-            AddServerHandler(0x15, Incoming.MapLoaded);
             AddServerHandler(0x19, Incoming.PlaySound);
             AddServerHandler(0x1A, Incoming.PlayerAction);
             AddServerHandler(0x29, Incoming.Animation);
@@ -85,7 +85,7 @@ namespace BotCore
                 Client.CleanUpMememory();
             }
 
-            Console.WriteLine("Client is ready.");
+            //Console.WriteLine("Client is ready.");
             ClientReady = transit;
         }
 

@@ -9,18 +9,22 @@ namespace BotCore.Types
         private const int MAX_BREADCRUMBS_PER_MAP = 50;
         private const int REDUCTION_FACTOR = 5; // Keep every 5th breadcrumb when reducing
 
+        public ConcurrentDictionary<int, ConcurrentQueue<Position>> Trail { get; set; }
+        public ConcurrentDictionary<int, Position> EndOfTrail { get; set; }
+        
         public Breadcrumbs()
         {
             Trail = new ConcurrentDictionary<int, ConcurrentQueue<Position>>();
+            EndOfTrail = new ConcurrentDictionary<int, Position>();
         }
-
-        public ConcurrentDictionary<int, ConcurrentQueue<Position>> Trail { get; set; }
 
         public void DropBreadcrumb(int mapId, Position pos)
         {
             var queue = Trail.GetOrAdd(mapId, _ => new ConcurrentQueue<Position>());
             queue.Enqueue(pos);
 
+            EndOfTrail[mapId] = pos; // Update the end of trail position
+            
             // Reduce breadcrumbs if we have too many on this map
             if (queue.Count > MAX_BREADCRUMBS_PER_MAP)
             {
@@ -72,6 +76,11 @@ namespace BotCore.Types
                 newQueue.Enqueue(breadcrumbArray[i]);
             }
 
+            if (!newQueue.Contains(EndOfTrail[mapId]))
+            {
+                newQueue.Enqueue(EndOfTrail[mapId]);
+            }
+            
             Trail[mapId] = newQueue;
         }
     }

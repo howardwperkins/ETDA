@@ -7,6 +7,8 @@ namespace BotCore.Types
     {
         public short X, Y;
 
+        public Direction Direction;
+        
         public bool IsDoor { get; set; } = false;
 
         public int DistanceFrom(Position other)
@@ -34,9 +36,9 @@ namespace BotCore.Types
         {
             return $"({X}, {Y})";
         }
-        public bool IsNearby(Position pos)
+        public bool IsNearby(Position pos, int distance = 1)
         {
-            return pos.DistanceFrom(X, Y) <= 1;
+            return pos.DistanceFrom(X, Y) <= distance;
         }
         public bool WithinSquare(Position loc, int num)
         {

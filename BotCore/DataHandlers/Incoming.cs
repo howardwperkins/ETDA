@@ -14,6 +14,14 @@ namespace BotCore.DataHandlers
 {
     public static class Incoming
     {
+        /// <summary>
+        /// This handles the MapLoaded packet 0x15.
+        ///
+        /// This packet is sent by the server when the game first loads, when the player loads into a new map,
+        /// or when the player presses F5 to reload the current map.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="packet"></param>
         public static void MapLoaded(object sender, Packet packet)
         {
             var client = Collections.AttachedClients[(int)sender];
@@ -38,7 +46,7 @@ namespace BotCore.DataHandlers
                    client.MapName = name;
                    //reset active bar pointer
                    client.Active?.HardReset();
-                   Console.WriteLine("Map Loaded: " + name + " (" + number + ")");
+                   //Console.WriteLine("Map Loaded: " + name + " (" + number + ")");
                    //todo: reset any other pointers here on new map load.
                    ;
                }) { IsBackground = true }.Start();
@@ -46,6 +54,146 @@ namespace BotCore.DataHandlers
             GameActions.RequestProfile(client);
         }
 
+        /// <summary>
+        /// This handles the ClientLocationUpdated packet 0x04.
+        ///
+        /// This packet is sent by the server after the MapLoaded packet and tells the client where the player is
+        /// located on the newly loaded map.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="packet"></param>
+        public static void ClientLocationUpdated(object sender, Packet packet)
+        {
+            var client = Collections.AttachedClients[(int)sender];
+            var x = (short)packet.ReadUInt16();
+            var y = (short)packet.ReadUInt16();
+
+            var oldPosition = client.Attributes.ServerPosition;
+            var newPosition = new Position(x, y);
+            
+            client.Attributes.ServerPosition = newPosition;
+            
+            foreach (var otherClient in Collections.AttachedClients.Values)
+            {
+                if (otherClient == client) continue; // Skip the client that moved
+        
+                var followState = otherClient.StateMachine.States
+                    .OfType<FollowTarget>()
+                    .FirstOrDefault();
+            
+                if (followState != null && followState.Leader?.Client == client)
+                {
+                    int followerMapId = followState.Client.MapId;
+                    if (oldPosition != null 
+                        && (oldPosition.X != newPosition.X || oldPosition.Y != newPosition.Y)
+                        )
+                    {
+                        // We have to assume that the leader has entered a new map or moved significantly.
+                        // We need to drop a breadcrumb one cell toward where end of trail is facing so that
+                        // followers will walk into a presumed door.
+                        var breadcrumbPosition = new Position(oldPosition.X, oldPosition.Y);
+                        breadcrumbPosition.IsDoor = true;
+                        breadcrumbPosition.Direction = oldPosition.Direction;
+                        
+                        switch (breadcrumbPosition.Direction)
+                        {
+                            case Direction.South:
+                                breadcrumbPosition.Y++;
+                                break;
+                            case Direction.West:
+                                breadcrumbPosition.X--;
+                                break;
+                            case Direction.East:
+                                breadcrumbPosition.X++;
+                                break;
+                            case Direction.North:
+                                breadcrumbPosition.Y--;
+                                break;
+                        }
+                        
+                        followState.Leader.DropBreadcrumbsToFollowers(followerMapId, breadcrumbPosition);
+                        Console.WriteLine("Breadcrumb Dropped: {0} ({1},{2})", breadcrumbPosition.Direction, breadcrumbPosition.X, breadcrumbPosition.Y);
+                    }
+                }
+            }
+            
+            if (!client.MapLoaded)
+                return;
+            
+            var obj = client.FieldMap.GetObject(i => i.Serial == client.Attributes.Serial);
+            if (obj != null)
+            {
+                obj.ServerPosition = newPosition;
+                obj.OnPositionUpdated(client, oldPosition, newPosition);
+            }
+        }
+
+        /// <summary>
+        /// This handles the ClientPlayerWalked packet 0x0B.
+        ///
+        /// This packet is sent by the server after the player moves to a different coordinate on the map.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="packet"></param>
+        public static void ClientPlayerWalked(object sender, Packet packet)
+        {
+            var client = Collections.AttachedClients[(int)sender];
+            var direction = packet.ReadByte();
+            var x = packet.ReadInt16();
+            var y = packet.ReadInt16();
+            
+            Position oldPosition = new Position(x, y);
+            Position newPosition;
+
+            switch ((Direction)direction)
+            {
+                case Direction.South:
+                    y++;
+                    break;
+                case Direction.West:
+                    x--;
+                    break;
+                case Direction.East:
+                    x++;
+                    break;
+                case Direction.North:
+                    y--;
+                    break;
+            }
+
+            //Console.WriteLine("ClientPlayerWalked: {0} ({1},{2})", (Direction)direction, x, y);
+            
+            client.Attributes.ServerPosition = newPosition = new Position(x, y);
+            client.Attributes.ServerPosition.Direction = (Direction)direction;
+            Console.WriteLine("Walked to ({0},{1})", newPosition.X, newPosition.Y);
+            client.Attributes.Direction = (Direction)direction;
+
+            /*// Drop a Breadcrumb for FollowTarget followers
+            foreach (var otherClient in Collections.AttachedClients.Values)
+            {
+                if (otherClient == client) continue; // Skip the client that moved
+        
+                var followState = otherClient.StateMachine.States
+                    .OfType<FollowTarget>()
+                    .FirstOrDefault();
+            
+                if (followState != null && followState.Leader?.Client == client)
+                {
+                    // This client is following the one that moved, so drop breadcrumbs
+                    followState.Leader.DropBreadcrumbsToFollowers();
+                }
+            }*/
+            
+            var obj = client.FieldMap.GetObject(i => i.Serial == client.Attributes.Serial);
+            if (obj != null)
+            {
+                obj.ServerPosition = newPosition;
+                obj.OnPositionUpdated(client, oldPosition, newPosition);
+            }
+
+            client.Steps++;
+        }
+        
         public static void ObjectWalked(object sender, Packet e)
         {
             var client = Collections.AttachedClients[(int)sender];
@@ -269,68 +417,6 @@ namespace BotCore.DataHandlers
                 return;
 
             obj.Direction = (Direction)direction;
-        }
-
-        public static void ClientLocationUpdated(object sender, Packet packet)
-        {
-            var client = Collections.AttachedClients[(int)sender];
-            
-            // Prevent processing if map is not loaded
-            if (!client.MapLoaded)
-                return;
-            
-            var x = (short)packet.ReadUInt16();
-            var y = (short)packet.ReadUInt16();
-
-            var oldPosition = client.Attributes.ServerPosition;
-            var newPosition = new Position(x, y);
-            client.Attributes.ServerPosition = newPosition;
-
-            var obj = client.FieldMap.GetObject(i => i.Serial == client.Attributes.Serial);
-            if (obj != null)
-            {
-                obj.ServerPosition = newPosition;
-                obj.OnPositionUpdated(client, oldPosition, newPosition);
-            }
-        }
-
-        public static void ClientPlayerWalked(object sender, Packet packet)
-        {
-            var client = Collections.AttachedClients[(int)sender];
-            var direction = packet.ReadByte();
-            var x = packet.ReadInt16();
-            var y = packet.ReadInt16();
-
-            Position oldPosition = new Position(x, y);
-            Position newPosition;
-
-            switch ((Direction)direction)
-            {
-                case Direction.South:
-                    y++;
-                    break;
-                case Direction.West:
-                    x--;
-                    break;
-                case Direction.East:
-                    x++;
-                    break;
-                case Direction.North:
-                    y--;
-                    break;
-            }
-
-            client.Attributes.ServerPosition = newPosition = new Position(x, y);
-            client.Attributes.Direction = (Direction)direction;
-
-            var obj = client.FieldMap.GetObject(i => i.Serial == client.Attributes.Serial);
-            if (obj != null)
-            {
-                obj.ServerPosition = newPosition;
-                obj.OnPositionUpdated(client, oldPosition, newPosition);
-            }
-
-            client.Steps++;
         }
 
         public static void AislingsAdded(object sender, Packet packet)

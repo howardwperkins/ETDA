@@ -1,5 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading;
+using BotCore.Actions;
+using BotCore.PathFinding;
 using BotCore.Types;
 
 namespace BotCore.States
@@ -13,7 +17,8 @@ namespace BotCore.States
         public Breadcrumbs Breadcrumbs = new Breadcrumbs();
         
         public int Distance { get; set; } = 2;
-        private int runDistance;
+        private Position TargetPosition = null;
+        private bool ExactPosition = false;
         
         public Leader Leader
         {
@@ -48,7 +53,8 @@ namespace BotCore.States
         {
             get
             {
-                if (Client.FieldMap == null
+                if (InTransition
+                    || Client.FieldMap == null
                     || !Client.IsInGame()
                     || Client.MapId == 0
                     || !Client.Utilities.CanWalk()
@@ -58,29 +64,28 @@ namespace BotCore.States
                     Console.WriteLine("" + Client.Attributes.PlayerName + " cannot follow target, missing prerequisites.");
                     return false;
                 }
-                
-                var followDistance = Distance;
-                if (Client.MapId != Leader.Client.MapId)
+
+                if (Client.MapId == Leader.Client.MapId
+                    && Client.Attributes.ServerPosition.IsNearby(Leader.Client.Attributes.ServerPosition, 2))
                 {
-                    followDistance = 0;
+                    TargetPosition = null;
+                    return false;
                 }
                 
-                var myPosition = Client.Attributes?.ServerPosition;
-                var peekTargetPosition = Breadcrumbs.PeekNextBreadcrumb(Client.MapId);
-
-                if (peekTargetPosition != null 
-                    && followDistance != 0 
-                    && peekTargetPosition.DistanceFrom(Leader.Client.Attributes.ServerPosition) > followDistance)
+                if (Client.MapId == Leader.Client.MapId)
                 {
-                    runDistance = 0;
+                    TargetPosition = Leader.Client.Attributes.ServerPosition;
+                    ExactPosition = false;
                     return true;
                 }
                 
-                if (peekTargetPosition == null
-                    || !(myPosition?.DistanceFrom(peekTargetPosition) > followDistance)) return false;
-                runDistance = followDistance;
+                var peekTargetPosition = Breadcrumbs.PeekNextBreadcrumb(Client.MapId);
+                if (peekTargetPosition == null)
+                    return false;
+                
+                TargetPosition = peekTargetPosition;
+                ExactPosition = true;
                 return true;
-
             }
             set
             {
@@ -90,39 +95,141 @@ namespace BotCore.States
 
         public override int Priority { get; set; }
         
-        private Position m_targetLastKnownPosition = null;
-        private Direction m_targetLastKnownDirection = Direction.None;
-        private short m_targetLastKnownMap = 0;
-        private string m_targetLastKnownMapName = null;
-        
-        public override void Run(TimeSpan Elapsed)
+        public override void Run(TimeSpan elapsed)
         {
             if (Enabled 
                 && !InTransition)
             {
                 InTransition = true;
+
+                if (TargetPosition == null)
+                {
+                    Console.WriteLine(Client.Attributes.PlayerName + " has no target position to follow.");
+                    InTransition = false;
+                    return;
+                }
                 
-                /*
-                 While m_target walks around a given map their client updates their position in real-time.
-                 This game state runs in a separate thread under the context of a separate client and continuously
-                 checks their current position.
-                 If both clients are on the same map then this can simply follow their coordinates and remain
-                 at the specified distance.
-                 However once the target client changes maps their current position is not a valid location for this
-                 client to move to and this clcient needs to move to exactly where the target client was last seen on
-                 their previous map ignoring follow distance.
-                */
-                
-                Position peekTargetPosition = Breadcrumbs.PeekNextBreadcrumb(Client.MapId);
+                var peekTargetPosition = Breadcrumbs.PeekNextBreadcrumb(Client.MapId);
                 var path = Client.FieldMap.Search(Client.Attributes.ServerPosition, peekTargetPosition);
                 
                 if (path != null)
                 {
                     Breadcrumbs.GetNextBreadcrumb(Client.MapId);
-                    Client.Utilities.ComputeStep(path, runDistance);
+                    //Console.WriteLine(Client.Attributes.PlayerName + " @ " + Client.MapId + " (" + Client.Attributes.ServerPosition.X + "," + Client.Attributes.ServerPosition.Y + ") -> (" + walkTo.X + "," + walkTo.Y + ")");
+                    WalkPath(path);
                 }
             }
-            Client.TransitionTo(this, Elapsed);
+            Client.TransitionTo(this, elapsed);
+        }
+        
+        private void WalkPath(List<PathSolver.PathFinderNode> path)
+        {
+            // Start from index 1 (skip current position)
+            for (int i = 1; i < path.Count; i++)
+            {
+                var currentPos = Client.Attributes.ServerPosition;
+                var targetPos = new Position(path[i].X, path[i].Y);
+        
+                // Calculate direction to next step
+                var direction = GetDirection(currentPos, targetPos);
+                
+                // Turn to face the correct direction with retry logic
+                if (Client.Attributes.Direction != direction)
+                {
+                    if (!TryTurnToDirection(direction))
+                    {
+                        Console.WriteLine($"{Client.Attributes.PlayerName} failed to turn {direction}, skipping path");
+                        return;
+                    }
+                }
+        
+                // Walk in the direction with retry logic
+                if (!TryWalkToPosition(targetPos, direction))
+                {
+                    Console.WriteLine($"{Client.Attributes.PlayerName} failed to walk to ({targetPos.X},{targetPos.Y}), skipping path");
+                    return;
+                }
+            }
+        }
+        
+        private bool TryTurnToDirection(Direction direction, int maxRetries = 3, int timeoutMs = 2000)
+        {
+            for (int retry = 0; retry < maxRetries; retry++)
+            {
+                GameActions.Walk(Client, direction);
+                Console.WriteLine($"{Client.Attributes.PlayerName} turning {direction} (attempt {retry + 1})");
+                
+                var startTime = DateTime.Now;
+                while (Client.Attributes.Direction != direction)
+                {
+                    if ((DateTime.Now - startTime).TotalMilliseconds > timeoutMs)
+                    {
+                        Console.WriteLine($"{Client.Attributes.PlayerName} timeout turning {direction}");
+                        break;
+                    }
+                    Thread.Sleep(50);
+                }
+                
+                if (Client.Attributes.Direction == direction)
+                {
+                    return true;
+                }
+                
+                // Wait before retry
+                Thread.Sleep(100);
+            }
+            
+            return false;
+        }
+        
+        private bool TryWalkToPosition(Position targetPos, Direction direction, int maxRetries = 3, int timeoutMs = 3000)
+        {
+            for (int retry = 0; retry < maxRetries; retry++)
+            {
+                GameActions.Walk(Client, direction);
+                Console.WriteLine($"{Client.Attributes.PlayerName} walking {direction} (attempt {retry + 1})");
+                
+                var startTime = DateTime.Now;
+                while (Client.Attributes.ServerPosition.X != targetPos.X ||
+                       Client.Attributes.ServerPosition.Y != targetPos.Y)
+                {
+                    if ((DateTime.Now - startTime).TotalMilliseconds > timeoutMs)
+                    {
+                        Console.WriteLine($"{Client.Attributes.PlayerName} timeout walking to ({targetPos.X},{targetPos.Y})");
+                        break;
+                    }
+                    Thread.Sleep(50);
+                }
+                
+                // Check if we reached the target
+                if (Client.Attributes.ServerPosition.X == targetPos.X &&
+                    Client.Attributes.ServerPosition.Y == targetPos.Y)
+                {
+                    return true;
+                }
+                
+                // Wait before retry
+                Thread.Sleep(200);
+            }
+            
+            return false;
+        }
+
+        private Direction GetDirection(Position from, Position to)
+        {
+            var dx = to.X - from.X;
+            var dy = to.Y - from.Y;
+    
+            if (dx == 1 && dy == 0) return Direction.East;
+            if (dx == -1 && dy == 0) return Direction.West;
+            if (dx == 0 && dy == -1) return Direction.North;
+            if (dx == 0 && dy == 1) return Direction.South;
+    
+            // Fallback for diagonal or invalid moves
+            if (dx > 0) return Direction.East;
+            if (dx < 0) return Direction.West;
+            if (dy > 0) return Direction.South;
+            return Direction.North;
         }
     }
 }

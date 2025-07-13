@@ -16,6 +16,11 @@ public:
 
 	PathFinderNode *LastNode;
 	PathFinderNode *NextNode;
+	
+	std::string ToString() const
+	{
+		return "(" + std::to_string(X) + ", " + std::to_string(Y) + ")";
+	}
 };
 
 struct Point
