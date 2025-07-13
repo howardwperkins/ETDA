@@ -126,7 +126,7 @@ namespace BotCore.Actions
             packet.WriteByte((byte)dir);
             GameClient.InjectPacket<ServerPacket>(client, packet);
 
-            client.Attributes.Direction = dir;
+            client.Attributes.ServerPosition.Direction = dir;
             client.LastDirectionTurn = DateTime.Now;
         }
 
@@ -157,16 +157,16 @@ namespace BotCore.Actions
 
         public static void Walk(GameClient Client, Direction dir)
         {
-            if ((DateTime.Now - Client.LastMovementUpdate).TotalMilliseconds > 50)
+            if ((DateTime.Now - Client.LastMovementUpdate).TotalMilliseconds > 100)
             {
-                Console.WriteLine($"Walking {Client.Attributes.Serial} in direction {dir}");
+                //Console.WriteLine($"Walking {Client.Attributes.Serial} in direction {dir}");
                 if (dir == Direction.Random)
                 {
                     var random = (Direction)rnd.Next(0, 3);
                     Walk(Client, random);
                 }
 
-                if (dir != Client.Attributes.Direction)
+                if (dir != Client.Attributes.ServerPosition.Direction)
                 {
                     Face(Client, dir);
                 }
@@ -180,7 +180,7 @@ namespace BotCore.Actions
                 if (dir == Direction.West)
                     Client.InjectSyncOperation(SyncOperation.WalkWest);
 
-                Client.Attributes.Direction = dir;
+                Client.Attributes.ServerPosition.Direction = dir;
 
                 Client.LastMovementUpdate = DateTime.Now;
             }

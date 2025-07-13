@@ -64,7 +64,7 @@ namespace BotCore.Types
                     
             }
             
-            Console.WriteLine($"Leader {Name} dropped breadcrumbs at {position} to {Followers.Count} followers");
+            Console.WriteLine($@"{Name} dropped breadcrumbs {mapId} @ {position}");
         }
         public override string ToString()
         {

@@ -46,7 +46,7 @@ namespace BotCore.DataHandlers
                    client.MapName = name;
                    //reset active bar pointer
                    client.Active?.HardReset();
-                   //Console.WriteLine("Map Loaded: " + name + " (" + number + ")");
+                   Console.WriteLine("Map Loaded: " + name + " (" + number + ")");
                    //todo: reset any other pointers here on new map load.
                    ;
                }) { IsBackground = true }.Start();
@@ -112,7 +112,6 @@ namespace BotCore.DataHandlers
                         }
                         
                         followState.Leader.DropBreadcrumbsToFollowers(followerMapId, breadcrumbPosition);
-                        Console.WriteLine("Breadcrumb Dropped: {0} ({1},{2})", breadcrumbPosition.Direction, breadcrumbPosition.X, breadcrumbPosition.Y);
                     }
                 }
             }
@@ -160,29 +159,10 @@ namespace BotCore.DataHandlers
                     y--;
                     break;
             }
-
-            //Console.WriteLine("ClientPlayerWalked: {0} ({1},{2})", (Direction)direction, x, y);
             
             client.Attributes.ServerPosition = newPosition = new Position(x, y);
             client.Attributes.ServerPosition.Direction = (Direction)direction;
-            Console.WriteLine("Walked to ({0},{1})", newPosition.X, newPosition.Y);
-            client.Attributes.Direction = (Direction)direction;
-
-            /*// Drop a Breadcrumb for FollowTarget followers
-            foreach (var otherClient in Collections.AttachedClients.Values)
-            {
-                if (otherClient == client) continue; // Skip the client that moved
-        
-                var followState = otherClient.StateMachine.States
-                    .OfType<FollowTarget>()
-                    .FirstOrDefault();
-            
-                if (followState != null && followState.Leader?.Client == client)
-                {
-                    // This client is following the one that moved, so drop breadcrumbs
-                    followState.Leader.DropBreadcrumbsToFollowers();
-                }
-            }*/
+            //Console.WriteLine("{0}: ({1},{2})", client.Attributes.PlayerName, newPosition.X, newPosition.Y);
             
             var obj = client.FieldMap.GetObject(i => i.Serial == client.Attributes.Serial);
             if (obj != null)
@@ -409,8 +389,8 @@ namespace BotCore.DataHandlers
             var serial = packet.ReadInt32();
             var direction = packet.ReadByte();
 
-            if (client.Attributes.Serial == serial)
-                client.Attributes.Direction = (Direction)direction;
+            if (client.Attributes.Serial == serial && client.Attributes.ServerPosition != null)
+                client.Attributes.ServerPosition.Direction = (Direction)direction;
 
             var obj = client.FieldMap.GetObject(i => i.Serial == serial);
             if (obj == null)
@@ -432,7 +412,7 @@ namespace BotCore.DataHandlers
             if (serial == client.Attributes.Serial)
             {
                 client.Attributes.ServerPosition = new Position(x, y);
-                client.Attributes.Direction = (Direction)direction;
+                client.Attributes.ServerPosition.Direction = (Direction)direction;
             }
 
             if (visible == ushort.MaxValue)
@@ -539,7 +519,13 @@ namespace BotCore.DataHandlers
             var path = Path.Combine(Collections.DAPATH, "maps") + "\\lod" + number.ToString(CultureInfo.InvariantCulture) + ".map";
 
             if (File.Exists(path))
+            {
                 PrepareMap(client, number, width, height, path);
+            }
+            else
+            {
+                throw new FileNotFoundException("Map file not found: " + path);
+            }
         }
 
         private static void PrepareMap(Client client, short number, short width, short height, string path)

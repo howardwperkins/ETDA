@@ -118,7 +118,12 @@ namespace BotCore.Components
 
         private void OnUpdate()
         {
-
+            if (Client.FieldMap?.MapObjects == null 
+                || Client.Attributes?.ServerPosition == null)
+            {
+                return;
+            }
+            
             //this is preliminary checks, to ensure targets are valid.
             var objects = (from v in Client.FieldMap.MapObjects
                            where v != null

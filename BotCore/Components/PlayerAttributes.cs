@@ -8,7 +8,6 @@ namespace BotCore.Components
 {
     public class PlayerAttributes : UpdateableComponent
     {
-        public Direction Direction;
         public Position ServerPosition { get; set; }
 
         public List<PartyGroup> GroupMembers = new List<PartyGroup>();

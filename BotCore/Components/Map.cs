@@ -63,6 +63,15 @@ namespace BotCore.Components
             }
         }
 
+        private void MapDataFixes(int number)
+        {
+            if (number == 502)
+            {
+                SetWall(26,45);
+                SetWall(15,7);
+            }
+        }
+        
         public bool CanUseSkills { get; set; }
 
         public bool CanCastSpells { get; set; }
@@ -76,10 +85,10 @@ namespace BotCore.Components
                 {
                     if (j == X() && i == Y())
                     {
-                        result += "x";
+                        result += "o";
                     }
                     else
-                        result += IsWall(j, i) ? "1" : "0";
+                        result += IsWall(j, i) ? "X" : " ";
                 }
                 result += Environment.NewLine;
             }
@@ -259,7 +268,7 @@ namespace BotCore.Components
             if (rWall == 0)
                 return sotp[lWall - 1] == 0x0F;
             return
-                sotp[lWall - 1] == 0x0F && sotp[rWall - 1] == 0x0F;
+                sotp[lWall - 1] == 0x0F || sotp[rWall - 1] == 0x0F;
         }
 
         public bool IsWall(short x, short y)
@@ -306,6 +315,8 @@ namespace BotCore.Components
             ProcessMap(data);
             data.Dispose();
 
+            //MapDataFixes(number);
+            
             if (!CanCastSpells)
             {
                 CanCastSpells = true;

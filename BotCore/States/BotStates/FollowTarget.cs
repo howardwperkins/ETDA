@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Threading;
 using BotCore.Actions;
 using BotCore.PathFinding;
@@ -17,8 +16,9 @@ namespace BotCore.States
         public Breadcrumbs Breadcrumbs = new Breadcrumbs();
         
         public int Distance { get; set; } = 2;
+        private short TargetMap = 0;
         private Position TargetPosition = null;
-        private bool ExactPosition = false;
+        private bool TargetIsBreadcrumb = false;
         
         public Leader Leader
         {
@@ -69,23 +69,31 @@ namespace BotCore.States
                     && Client.Attributes.ServerPosition.IsNearby(Leader.Client.Attributes.ServerPosition, 2))
                 {
                     TargetPosition = null;
+                    TargetIsBreadcrumb = false;
                     return false;
                 }
                 
                 if (Client.MapId == Leader.Client.MapId)
                 {
+                    Breadcrumbs.ClearAllBreadcrumbs();
                     TargetPosition = Leader.Client.Attributes.ServerPosition;
-                    ExactPosition = false;
+                    TargetIsBreadcrumb = false;
                     return true;
                 }
                 
-                var peekTargetPosition = Breadcrumbs.GetNextBreadcrumb(Client.MapId);
-                if (peekTargetPosition == null)
-                    return false;
+                var peekTargetPosition = Breadcrumbs.GetBreadcrumb(Client.MapId);
+                if (peekTargetPosition != null)
+                {
+                    TargetMap = Client.MapId;
+                    TargetPosition = peekTargetPosition;
+                    TargetIsBreadcrumb = true;
+                    Console.WriteLine(Client.Attributes.PlayerName + " is following breadcrumb " + TargetMap + " @ (" + TargetPosition.X + "," + TargetPosition.Y + ")");
+                    return true;
+                }
                 
-                TargetPosition = peekTargetPosition;
-                ExactPosition = true;
-                return true;
+                TargetPosition = null;
+                TargetIsBreadcrumb = false;
+                return false;
             }
             set
             {
@@ -110,128 +118,76 @@ namespace BotCore.States
                 }
                 
 
-
                 while (!DoneWalking())
                 {
                     var path = Client.FieldMap.Search(Client.Attributes.ServerPosition, TargetPosition);
                     if (path == null || path.Count == 0)
                     {
-                        Console.WriteLine(Client.Attributes.PlayerName + " could not find a path to the target position.");
+                        Console.WriteLine(Client.Attributes.PlayerName + " NO PATH " + Client.Attributes.ServerPosition + "->" + TargetPosition);
                         InTransition = false;
                         return;
                     }
                     
+                    if (!TargetIsBreadcrumb && Client.MapId != Leader.Client.MapId)
+                    {
+                        var peekTargetPosition = Breadcrumbs.GetBreadcrumb(Client.MapId);
+                        if (peekTargetPosition != null)
+                        {
+                            TargetMap = Client.MapId;
+                            TargetPosition = peekTargetPosition;
+                            TargetIsBreadcrumb = true;
+                            Console.WriteLine(Client.Attributes.PlayerName + " is following breadcrumb " + TargetMap + " @ (" + TargetPosition.X + "," + TargetPosition.Y + ")");
+                            continue;
+                        }
+                        
+                        Console.WriteLine(@"{0} is lost and doesn't know where to go.", Client.Attributes.PlayerName);
+                        InTransition = false;
+                        return;
+                    }
                     WalkPath(path);
+                    Thread.Sleep(200);
                 }
-                
             }
             Client.TransitionTo(this, elapsed);
         }
 
-        private bool DoneWalking()
+        private bool DoneWalking(int distance = 2)
         {
-            var doneWalking = Client.Attributes.ServerPosition == TargetPosition;
-            if (!ExactPosition)
+            if (TargetIsBreadcrumb && Client.MapId == Leader.Client.MapId)
             {
-                doneWalking = Client.Attributes.ServerPosition.IsNearby(TargetPosition);
-            }
-
-            return doneWalking;
-        }
-        
-        private void WalkPath(List<PathSolver.PathFinderNode> path)
-        {
-            // Start from index 1 (skip current position)
-            for (int i = 1; i < path.Count; i++)
-            {
-                var currentPos = Client.Attributes.ServerPosition;
-                var targetPos = new Position(path[i].X, path[i].Y);
-        
-                // Calculate direction to next step
-                var direction = GetDirection(currentPos, targetPos);
-                
-                // Turn to face the correct direction with retry logic
-                if (Client.Attributes.Direction != direction)
-                {
-                    if (!TryTurnToDirection(direction))
-                    {
-                        Console.WriteLine($"{Client.Attributes.PlayerName} failed to turn {direction}, skipping path");
-                        return;
-                    }
-                }
-        
-                // Walk in the direction with retry logic
-                if (!TryWalkToPosition(targetPos, direction))
-                {
-                    Console.WriteLine($"{Client.Attributes.PlayerName} failed to walk to ({targetPos.X},{targetPos.Y}), skipping path");
-                    return;
-                }
-            }
-        }
-        
-        private bool TryTurnToDirection(Direction direction, int maxRetries = 3, int timeoutMs = 2000)
-        {
-            for (int retry = 0; retry < maxRetries; retry++)
-            {
-                GameActions.Walk(Client, direction);
-                Console.WriteLine($"{Client.Attributes.PlayerName} turning {direction} (attempt {retry + 1})");
-                
-                var startTime = DateTime.Now;
-                while (Client.Attributes.Direction != direction)
-                {
-                    if ((DateTime.Now - startTime).TotalMilliseconds > timeoutMs)
-                    {
-                        Console.WriteLine($"{Client.Attributes.PlayerName} timeout turning {direction}");
-                        break;
-                    }
-                    Thread.Sleep(50);
-                }
-                
-                if (Client.Attributes.Direction == direction)
-                {
-                    return true;
-                }
-                
-                // Wait before retry
-                Thread.Sleep(100);
+                var breadcrumbs = Breadcrumbs.GetBreadcrumb(TargetMap);
+                Console.WriteLine("" + Client.Attributes.PlayerName + " picked up breadcrumb (" + breadcrumbs.X + "," + breadcrumbs.Y + ")");
+                Breadcrumbs.ClearBreadcrumb(TargetMap);
+                return true;
             }
             
-            return false;
-        }
-        
-        private bool TryWalkToPosition(Position targetPos, Direction direction, int maxRetries = 3, int timeoutMs = 3000)
-        {
-            for (int retry = 0; retry < maxRetries; retry++)
+            if (!TargetIsBreadcrumb)
             {
-                GameActions.Walk(Client, direction);
-                Console.WriteLine($"{Client.Attributes.PlayerName} walking {direction} (attempt {retry + 1})");
-                
-                var startTime = DateTime.Now;
-                while (Client.Attributes.ServerPosition.X != targetPos.X ||
-                       Client.Attributes.ServerPosition.Y != targetPos.Y)
-                {
-                    if ((DateTime.Now - startTime).TotalMilliseconds > timeoutMs)
-                    {
-                        Console.WriteLine($"{Client.Attributes.PlayerName} timeout walking to ({targetPos.X},{targetPos.Y})");
-                        break;
-                    }
-                    Thread.Sleep(50);
-                }
-                
-                // Check if we reached the target
-                if (Client.Attributes.ServerPosition.X == targetPos.X &&
-                    Client.Attributes.ServerPosition.Y == targetPos.Y)
-                {
-                    return true;
-                }
-                
-                // Wait before retry
-                Thread.Sleep(200);
+                return Client.Attributes.ServerPosition.IsNearby(TargetPosition, distance);
             }
             
             return false;
         }
 
+        private void WalkPath(List<PathSolver.PathFinderNode> path, int distance = 1)
+        {
+            if (path == null || path.Count == 0)
+                return;
+            
+            if (distance >= path.Count)
+            {
+                WalkPath(path, --distance);
+                return;
+            }
+            
+            if (distance < 0)
+                return;
+            
+            var pos = new Position(path[distance].X, path[distance].Y);
+            var direction = GetDirection(Client.Attributes.ServerPosition, pos);
+            GameActions.Walk(Client, direction);
+        }
+        
         private Direction GetDirection(Position from, Position to)
         {
             var dx = to.X - from.X;
